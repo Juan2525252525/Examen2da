@@ -1,0 +1,140 @@
+@page "/tienda"
+@rendermode InteractiveServer
+
+
+<h3>Productos</h3>
+
+<EditForm Model="_producto" OnValidSubmit="GuardarProducto">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="row mb-3">
+        <label for="txtNumeroInventario" class="col-2">Número de Inventario</label>
+        <div class="col-10">
+            <InputNumber id="txtNumeroInventario" class="form-control" @bind-Value="_producto.NumeroInventario" />
+            <ValidationMessage For="@(()=>_producto.NumeroInventario)" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label for="txtNombre" class="col-2">Nombre</label>
+        <div class="col-10">
+            <InputText id="txtNombre" class="form-control" @bind-Value="_producto.Nombre" />
+            <ValidationMessage For="@(()=>_producto.Nombre)" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <label for="txtDepartamento" class="col-2">Departamento</label>
+        <div class="col-10">
+            <InputSelect id="txtDepartamento" class="form-control" @bind-Value="_producto.Departamento">
+                <option >Seleccione</option>
+                <option >Frutas</option>
+                <option >Verduras</option>
+                <option >Lácteos</option>
+            </InputSelect>
+            <ValidationMessage For="@(()=>_producto.Departamento)" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+</EditForm>
+
+<hr />
+
+@if (_productos.Count > 0)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Número de Inventario</th>
+                <th>Nombre</th>
+                <th>Departamento</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var producto in _productos)
+            {
+                <tr>
+                    <td>@producto.NumeroInventario</td>
+                    <td>@producto.Nombre</td>
+                    <td>@producto.Departamento</td>
+                    <td>
+                        <button class="btn btn-danger" @onclick="() => EliminarProducto(producto)">🗑</button>
+                        <button class="btn btn-warning" @onclick="() => EditarProducto(producto)">✏️</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<button class="btn btn-info" @onclick="MostrarExistencias">Mostrar Existencias</button>
+
+@if (!string.IsNullOrEmpty(_tabla))
+{
+    <div>@(new MarkupString(_tabla))</div>
+}
+
+@code {
+    private Producto _producto = new();
+    private List<Producto> _productos = new();
+    private string _tabla = "";
+
+    private void GuardarProducto()
+    {
+   
+
+        _productos.Add(new Producto
+            {
+                NumeroInventario = _producto.NumeroInventario,
+                Nombre = _producto.Nombre,
+                Departamento = _producto.Departamento
+            });
+
+        _producto = new Producto(); 
+    }
+
+    private void EliminarProducto(Producto producto)
+    {
+        _productos.Remove(producto);
+    }
+
+    private void EditarProducto(Producto producto)
+    {
+        _producto = producto;
+    }
+
+    private void MostrarExistencias()
+    {
+    
+        int frutasCount = _productos.Count(p => p.Departamento == "Frutas");
+        int verdurasCount = _productos.Count(p => p.Departamento == "Verduras");
+        int lacteosCount = _productos.Count(p => p.Departamento == "Lácteos");
+
+ 
+        _tabla = "<table class='table table-striped'><thead><tr><th>Frutas</th><th>Verduras</th><th>Lácteos</th></tr></thead><tbody>";
+        _tabla += $"<tr><td>{frutasCount}</td><td>{verdurasCount}</td><td>{lacteosCount}</td></tr>";
+        _tabla += "</tbody></table>";
+    }
+}
+using System.ComponentModel.DataAnnotations;
+
+namespace Examen2da.Models
+{
+    public class Producto
+    {
+        [Required(ErrorMessage = "El número de inventario es obligatorio")]
+        [Range(1, int.MaxValue, ErrorMessage = "El número de inventario debe ser mayor a 0")]
+        public int? NumeroInventario { get; set; }
+
+        [Required(ErrorMessage = "El nombre no debe ser vacío")]
+        [StringLength(200, ErrorMessage = "El nombre no puede superar los 200 caracteres")]
+        public string? Nombre { get; set; }
+
+        [Required(ErrorMessage = "Debe seleccionar un departamento")]
+        [RegularExpression("Frutas|Verduras|Lácteos", ErrorMessage = "El departamento debe ser Frutas, Verduras o Lácteos")]
+        public string? Departamento { get; set; }
+    }
+}
